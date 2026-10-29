@@ -4,7 +4,8 @@ const state = {
   lang: 'en',
   screen: 'lang',
   place: null,        // { name: {en,gu,hi}, lat, lng, icon } when the user spoke a place
-  suggestions: [],    // nearby station ids for state.place
+  suggestions: [],    // nearby station ids for state.place, best road trip first
+  lastMiles: {},      // station id -> road route from that station to state.place
   trip: null,
   tickets: 1,
   cashIn: 0,          // cash received so far on the payment screen
@@ -35,30 +36,112 @@ function fmtDist(m) {
   return m >= 1000 ? `${(m / 1000).toFixed(1)} ${t('km')}` : `${Math.round(m / 10) * 10} ${t('m')}`;
 }
 
-// Exit gate faces the destination: north = 1, east = 2, south = 3, west = 4.
-function exitGate(stationId, place) {
+// Exit gate faces the way out: north = 1, east = 2, south = 3, west = 4. With a road
+// route it follows the road leaving the station, otherwise the straight line to the place.
+function exitGate(stationId, place, path) {
   if (!place) return 1;
-  return 1 + Math.round(bearing(STATIONS[stationId], place) / 90) % 4;
+  const s = STATIONS[stationId];
+  let toward = place;
+  if (path) {
+    const p = path.find(([lat, lng]) => haversine(s, { lat, lng }) > 120);
+    if (p) toward = { lat: p[0], lng: p[1] };
+  }
+  return 1 + Math.round(bearing(s, toward) / 90) % 4;
 }
 
-function lastMile(stationId, place) {
-  if (!place) return null;
-  const road = haversine(STATIONS[stationId], place) * 1.25;
-  const walk = road <= 2000;
+// Last stretch from the exit to the place: walk up to 2 km of road, otherwise auto/cab.
+function makeLastMile(roadMeters, carSeconds, path = null) {
+  const walk = roadMeters <= 2000;
   return {
     mode: walk ? 'walk' : 'cab',
-    dist: road,
-    mins: walk ? Math.max(1, Math.ceil(road / 75)) : Math.ceil(road / 350) + 4
+    dist: roadMeters,
+    // Router car times assume empty roads; city autos are slower and need a minute or three to find.
+    mins: walk ? Math.max(1, Math.ceil(roadMeters / 75)) : Math.ceil((carSeconds / 60) * 1.7) + 3,
+    path
   };
 }
 
-function nearestStations(place, n = 3) {
+// Offline fallback when the road router can't be reached.
+function estimateLastMile(stationId, place) {
+  const road = haversine(STATIONS[stationId], place) * 1.3;
+  return { ...makeLastMile(road, road / 9), estimated: true };
+}
+
+function nearestByAir(place, n) {
   return Object.keys(STATIONS)
     .filter(id => id !== KIOSK_STATION)
     .map(id => ({ id, d: haversine(place, STATIONS[id]) }))
     .sort((a, b) => a.d - b.d)
     .slice(0, n)
     .map(x => x.id);
+}
+
+/* ---------- road routing (OSRM on OpenStreetMap data) ---------- */
+
+const ROUTER = 'https://routing.openstreetmap.de/routed-car';
+
+async function routerGet(path, ms = 7000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(ROUTER + path, { signal: ctrl.signal });
+    const data = await res.json();
+    return data.code === 'Ok' ? data : null;
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const lngLat = p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`;
+
+// Road distance and drive time from each station to the place, in one request.
+async function roadTable(place, ids) {
+  const coords = [place, ...ids.map(id => STATIONS[id])].map(lngLat).join(';');
+  const data = await routerGet(`/table/v1/driving/${coords}?sources=${ids.map((_, i) => i + 1).join(';')}` +
+    '&destinations=0&annotations=duration,distance');
+  if (!data) return null;
+  const out = {};
+  ids.forEach((id, i) => {
+    const dist = data.distances[i][0], secs = data.durations[i][0];
+    if (dist != null && secs != null) out[id] = makeLastMile(dist, secs);
+  });
+  return out;
+}
+
+// The actual road path from a station to the place, as [lat, lng] points.
+async function roadPath(stationId, place) {
+  const data = await routerGet(`/route/v1/driving/${lngLat(STATIONS[stationId])};${lngLat(place)}?overview=full&geometries=geojson`);
+  return data ? data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]) : null;
+}
+
+// Pick the stations with the shortest road trip to the place, not the shortest straight line.
+async function suggestStations(place, n = 3) {
+  const candidates = nearestByAir(place, 8);
+  const table = await roadTable(place, candidates);
+  const miles = {};
+  for (const id of candidates) miles[id] = (table && table[id]) || estimateLastMile(id, place);
+  // Shortest road distance first; within 100 m of each other, the quicker ride wins.
+  const best = candidates
+    .sort((a, b) => (Math.round(miles[a].dist / 100) - Math.round(miles[b].dist / 100)) || (miles[a].mins - miles[b].mins))
+    .slice(0, n);
+  const paths = await Promise.all(best.map(id => roadPath(id, place)));
+  best.forEach((id, i) => { miles[id].path = paths[i]; });
+  vlog('road ranking', best.map(id => `${id} ${(miles[id].dist / 1000).toFixed(1)} km`).join(', '));
+  return { best, miles };
+}
+
+async function ensureLastMile(id) {
+  const place = state.place;
+  if (!place || (state.lastMiles[id] && state.lastMiles[id].path)) return;
+  let lm = state.lastMiles[id];
+  if (!lm) {
+    const table = await roadTable(place, [id]);
+    lm = (table && table[id]) || estimateLastMile(id, place);
+  }
+  lm.path = await roadPath(id, place);
+  state.lastMiles[id] = lm;
 }
 
 function fareFor(stops) {
@@ -102,11 +185,11 @@ function planTrip(to, place) {
   const stops = legs.reduce((n, l) => n + l.ids.length - 1, 0);
   const wait = 2 + (new Date().getMinutes() % 6);
   const metroMins = stops * 2 + (legs.length > 1 ? 5 : 0);
-  const lm = lastMile(to, place);
+  const lm = place ? (state.lastMiles[to] || estimateLastMile(to, place)) : null;
   return {
     to, place, legs, stops, wait, metroMins,
     lastMile: lm,
-    gate: exitGate(to, place),
+    gate: exitGate(to, place, lm && lm.path),
     totalMins: wait + metroMins + (lm ? lm.mins : 0),
     fare: fareFor(stops)
   };
@@ -230,11 +313,12 @@ function stopSpeaking() {
 
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
+const vlog = (...args) => console.info('[voice]', ...args);
 
 function setVoice(mode, text = '') {
   const box = panel.querySelector('.voice-box');
   if (!box) return;
-  box.className = 'voice-box v-' + mode;
+  box.className = 'voice-box v-' + mode + (meter ? ' live' : '');
   const status = box.querySelector('.voice-status');
   const said = box.querySelector('.voice-said');
   status.textContent = {
@@ -244,7 +328,9 @@ function setVoice(mode, text = '') {
     idle: t('tapToSpeak'),
     notfound: t('notFound'),
     nomic: t('noMic'),
-    blocked: t('micBlocked')
+    blocked: t('micBlocked'),
+    nodevice: t('noMicDevice'),
+    network: t('voiceNet')
   }[mode];
   said.textContent = text ? `“${text}”` : '';
 }
@@ -257,8 +343,11 @@ function listen() {
   rec.interimResults = true;
   rec.maxAlternatives = 5;
   let gotFinal = false;
+  rec.onaudiostart = () => vlog('audio capture started', rec && rec.lang);
+  rec.onspeechstart = () => vlog('speech detected');
   rec.onresult = e => {
     const res = e.results[e.results.length - 1];
+    vlog(res.isFinal ? 'final' : 'interim', res[0].transcript);
     if (res.isFinal) {
       gotFinal = true;
       handleSpoken([...res].map(a => a.transcript));
@@ -267,26 +356,113 @@ function listen() {
     }
   };
   rec.onerror = e => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') setVoice('blocked');
+    vlog('error', e.error, e.message || '');
+    const mode = {
+      'not-allowed': 'blocked',
+      'service-not-allowed': 'blocked',
+      'audio-capture': 'nodevice',
+      'network': 'network'
+    }[e.error];
+    if (mode) { stopMeter(); setVoice(mode); }
   };
   rec.onend = () => {
+    vlog('recognition ended');
+    stopMeter();
     const box = panel.querySelector('.voice-box');
     if (!gotFinal && box && box.classList.contains('v-listening')) setVoice('idle');
   };
   try {
     rec.start();
     setVoice('listening');
+    startMeter();
   } catch (err) {
+    vlog('start failed', err);
     setVoice('idle');
   }
 }
 
 function stopListening() {
+  stopMeter();
   if (rec) {
     rec.onend = null;
     rec.onresult = null;
+    rec.onerror = null;
     try { rec.abort(); } catch (e) { /* already stopped */ }
     rec = null;
+  }
+}
+
+/* Live microphone level, drawn as bars around the mic button. It reads the mic
+   separately from speech recognition, so it shows whether any sound reaches the kiosk. */
+
+const RING_BARS = 28;
+let meter = null;
+
+async function startMeter() {
+  stopMeter();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  const m = { stream: null, ctx: null, raf: 0, started: performance.now(), loudest: 0, warned: false };
+  meter = m;
+  try {
+    m.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (meter !== m) { m.stream.getTracks().forEach(tr => tr.stop()); return; }
+    vlog('meter using', m.stream.getAudioTracks()[0]?.label);
+    m.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (m.ctx.state === 'suspended') await m.ctx.resume();
+    const analyser = m.ctx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.55;
+    m.ctx.createMediaStreamSource(m.stream).connect(analyser);
+    const freq = new Uint8Array(analyser.frequencyBinCount);
+    const wave = new Uint8Array(analyser.fftSize);
+    panel.querySelector('.voice-box')?.classList.add('live');
+
+    const tick = () => {
+      if (meter !== m) return;
+      analyser.getByteFrequencyData(freq);
+      analyser.getByteTimeDomainData(wave);
+      let peak = 0;
+      for (const v of wave) peak = Math.max(peak, Math.abs(v - 128));
+      const level = Math.min(1, peak / 64);
+      m.loudest = Math.max(m.loudest, peak);
+      const box = panel.querySelector('.voice-box');
+      // A working mic always picks up some room noise; flat silence means the wrong or a muted mic.
+      if (box && !m.warned && m.loudest <= 2 && performance.now() - m.started > 3000) {
+        m.warned = true;
+        vlog('microphone is silent:', m.stream.getAudioTracks()[0]?.label);
+        box.querySelector('.voice-said').textContent = t('micSilent');
+        box.classList.add('silent');
+      }
+      if (box) {
+        box.style.setProperty('--lvl', level.toFixed(3));
+        // Mirror the speech band (~90 Hz – 3.5 kHz) around both halves of the ring.
+        const half = RING_BARS / 2;
+        box.querySelectorAll('.mic-ring i').forEach((bar, i) => {
+          const k = i < half ? i : RING_BARS - 1 - i;
+          const bin = 1 + Math.round(k * 18 / half);
+          bar.style.setProperty('--v', Math.min(1, (freq[bin] / 210) ** 1.6).toFixed(3));
+        });
+      }
+      m.raf = requestAnimationFrame(tick);
+    };
+    tick();
+  } catch (err) {
+    vlog('meter unavailable', err.name);
+    if (meter === m) meter = null;
+  }
+}
+
+function stopMeter() {
+  const m = meter;
+  meter = null;
+  if (!m) return;
+  cancelAnimationFrame(m.raf);
+  m.stream && m.stream.getTracks().forEach(tr => tr.stop());
+  m.ctx && m.ctx.close();
+  const box = panel.querySelector('.voice-box');
+  if (box) {
+    box.classList.remove('live');
+    box.querySelectorAll('.mic-ring i').forEach(bar => bar.style.removeProperty('--v'));
   }
 }
 
@@ -409,9 +585,12 @@ async function handleSpoken(alternatives) {
   choosePlace(place);
 }
 
-function choosePlace(place) {
+async function choosePlace(place) {
   state.place = place;
-  state.suggestions = nearestStations(place);
+  const { best, miles } = await suggestStations(place);
+  if (state.screen !== 'dest' || state.place !== place) return;
+  state.suggestions = best;
+  state.lastMiles = miles;
   go('pick');
 }
 
@@ -462,10 +641,13 @@ const SCREENS = {
           <span class="dv-place">🏙️</span><span class="dv-q">?</span>
         </div>
         <div class="voice-box v-speaking">
-          <button class="mic-btn" aria-label="${t('tapToSpeak')}">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15zm6.5-3.5a.9.9 0 1 0-1.8 0 4.7 4.7 0 0 1-9.4 0 .9.9 0 1 0-1.8 0 6.5 6.5 0 0 0 5.6 6.4V21h-2.4a.9.9 0 1 0 0 1.8h6.6a.9.9 0 1 0 0-1.8h-2.4v-3.1a6.5 6.5 0 0 0 5.6-6.4z"/></svg>
-          </button>
-          <div class="wave" aria-hidden="true">${'<i></i>'.repeat(9)}</div>
+          <div class="mic-ring">
+            ${Array.from({ length: RING_BARS }, (_, i) =>
+              `<i aria-hidden="true" style="--a:${i * (360 / RING_BARS)}deg;--d:${(-i * 0.09).toFixed(2)}s"></i>`).join('')}
+            <button class="mic-btn" aria-label="${t('tapToSpeak')}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15zm6.5-3.5a.9.9 0 1 0-1.8 0 4.7 4.7 0 0 1-9.4 0 .9.9 0 1 0-1.8 0 6.5 6.5 0 0 0 5.6 6.4V21h-2.4a.9.9 0 1 0 0 1.8h6.6a.9.9 0 1 0 0-1.8h-2.4v-3.1a6.5 6.5 0 0 0 5.6-6.4z"/></svg>
+            </button>
+          </div>
           <div class="voice-status">${t('speaking')}</div>
           <div class="voice-said"></div>
         </div>
@@ -485,7 +667,7 @@ const SCREENS = {
         <h1 class="screen-title">${t('pickStation')}</h1>
         <div class="cards">
           ${state.suggestions.map((id, i) => {
-            const lm = lastMile(id, p);
+            const lm = state.lastMiles[id];
             const walk = lm.mode === 'walk';
             const lines = MetroMap.linesOf(id);
             return `
@@ -497,7 +679,7 @@ const SCREENS = {
                   <span class="card-meta">
                     <span class="meta ${walk ? 'meta-walk' : 'meta-cab'}"><span class="meta-ico">${walk ? '🚶' : '🛺'}</span>${lm.mins} ${t('min')}</span>
                     <span class="meta meta-dist">${fmtDist(lm.dist)}</span>
-                    <span class="exit-sign">EXIT <b>${exitGate(id, p)}</b></span>
+                    <span class="exit-sign">EXIT <b>${exitGate(id, p, lm.path)}</b></span>
                   </span>
                 </span>
                 ${i === 0 ? '<span class="card-hand" aria-hidden="true">👆</span>' : ''}
@@ -692,7 +874,7 @@ function go(screen) {
 }
 
 function resetState() {
-  Object.assign(state, { place: null, suggestions: [], trip: null, tickets: 1, cashIn: 0, paidBy: null });
+  Object.assign(state, { place: null, suggestions: [], lastMiles: {}, trip: null, tickets: 1, cashIn: 0, paidBy: null });
 }
 
 function enter(screen) {
@@ -711,7 +893,7 @@ function enter(screen) {
     say('whereTo', () => { if (state.screen === 'dest') listen(); });
   }
   if (screen === 'pick') {
-    MetroMap.showSuggestions(state.place, state.suggestions);
+    MetroMap.showSuggestions(state.place, state.suggestions, state.lastMiles);
   }
   if (screen === 'trip') {
     MetroMap.showRoute(state.trip);
@@ -721,9 +903,13 @@ function enter(screen) {
   }
 }
 
-function chooseStation(id) {
+async function chooseStation(id) {
   if (id === KIOSK_STATION) { toast(t('alreadyHere')); return; }
   if (state.screen === 'dest') state.place = null;
+  // A station tapped on the map that wasn't suggested still needs its road route.
+  const from = state.screen;
+  await ensureLastMile(id);
+  if (state.screen !== from) return;
   state.tickets = 1;
   state.trip = planTrip(id, state.place);
   go('trip');

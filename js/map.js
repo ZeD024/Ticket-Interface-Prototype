@@ -167,20 +167,32 @@ const MetroMap = (() => {
     fitAll();
   }
 
-  function showSuggestions(place, stationIds) {
+  // Road path from a station to the place, or a straight line if no route is known.
+  function lastMilePoints(stationId, place, lm) {
+    const s = STATIONS[stationId];
+    return lm && lm.path ? [[s.lat, s.lng], ...lm.path, [place.lat, place.lng]] : [[s.lat, s.lng], [place.lat, place.lng]];
+  }
+
+  function lastMileStyle(lm, faint) {
+    const walk = !lm || lm.mode === 'walk';
+    return walk
+      ? { color: '#1a73e8', weight: faint ? 5 : 7, opacity: faint ? 0.75 : 1, dashArray: '0.1 12', lineCap: 'round', interactive: false }
+      : { color: '#f29900', weight: faint ? 4 : 6, opacity: faint ? 0.8 : 1, dashArray: '12 9', interactive: false };
+  }
+
+  function showSuggestions(place, stationIds, miles = {}) {
     reset();
     view.mode = 'suggest';
     stationIds.forEach((id, i) => { view.numbered[id] = i + 1; });
     setLines(true);
+    const pts = [[place.lat, place.lng]];
     for (const id of stationIds) {
-      const s = STATIONS[id];
-      L.polyline([[place.lat, place.lng], [s.lat, s.lng]], {
-        color: '#5f6368', weight: 4, dashArray: '2 10', lineCap: 'round', interactive: false
-      }).addTo(overlay);
+      const line = lastMilePoints(id, place, miles[id]);
+      L.polyline(line, lastMileStyle(miles[id], true)).addTo(overlay);
+      pts.push(...line);
     }
     placePin(place).addTo(overlay);
     refresh();
-    const pts = [[place.lat, place.lng], ...stationIds.map(id => [STATIONS[id].lat, STATIONS[id].lng])];
     map.flyToBounds(L.latLngBounds(pts), { padding: [110, 110], maxZoom: 15.5, duration: 1.1 });
   }
 
@@ -212,15 +224,12 @@ const MetroMap = (() => {
     }
 
     if (trip.place && trip.lastMile) {
-      const s = STATIONS[trip.to];
       const walk = trip.lastMile.mode === 'walk';
-      L.polyline([[s.lat, s.lng], [trip.place.lat, trip.place.lng]], walk
-        ? { color: '#1a73e8', weight: 7, dashArray: '0.1 14', lineCap: 'round', interactive: false }
-        : { color: '#f29900', weight: 6, dashArray: '14 10', interactive: false }).addTo(overlay);
+      const line = lastMilePoints(trip.to, trip.place, trip.lastMile);
+      L.polyline(line, lastMileStyle(trip.lastMile, false)).addTo(overlay);
       placePin(trip.place).addTo(overlay);
-      const at = [(s.lat + trip.place.lat) / 2, (s.lng + trip.place.lng) / 2];
-      pill(at, `<span class="pill-ico">${walk ? '🚶' : '🛺'}</span>${trip.lastMile.mins} ${T.min[lang]}`, walk ? 'pill-walk' : 'pill-cab').addTo(overlay);
-      pts.push([trip.place.lat, trip.place.lng]);
+      pill(line[Math.floor(line.length / 2)], `<span class="pill-ico">${walk ? '🚶' : '🛺'}</span>${trip.lastMile.mins} ${T.min[lang]}`, walk ? 'pill-walk' : 'pill-cab').addTo(overlay);
+      pts.push(...line);
     }
 
     refresh();

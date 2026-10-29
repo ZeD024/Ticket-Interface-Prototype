@@ -9,7 +9,7 @@ Gujarati, Hindi or English.
 1. **Choose language:** ગુજરાતી / हिंदी / English, each written in its own script.
 2. **Greeting:** "Namaste" is spoken in the chosen language.
 3. **Where do you want to go?** The question is spoken aloud, then the kiosk listens. Say any place in Ahmedabad, or touch a station on the map.
-4. **Choose a station:** the three nearest stations light up on the map, each with walking/auto time and the exit gate.
+4. **Choose a station:** the three stations with the shortest *road* route to the place light up, each with its real walking or auto route drawn on the map, the time and the exit gate. Routes come from OSRM (routing.openstreetmap.de) on OpenStreetMap roads. Up to 2 km is shown as a walk, longer as an auto/cab, with drive times scaled up for city traffic.
 5. **Trip and tickets:** the route is drawn on the map with direction arrows. The panel shows it as a flowchart: landmark pictures for the start, interchange and destination, stops in between as dots, and colour-coded platform badges (with matching footstep stickers in the station) for where to board. Choose the number of tickets with − / +.
 6. **Payment:** the UPI QR and the cash slot are shown together. The kiosk detects which one was used (simulated: tap the QR or press `U` for UPI; tap the cash slot or press `C` to insert the next note).
 
@@ -20,10 +20,12 @@ Map on the left, menu on the right (within easy reach for right-handed users).
 ## Run locally
 
 ```bash
-python -m http.server 8000
+python tools/serve.py
 ```
 
-Then open http://localhost:8000. Use Chrome or Edge for voice input.
+Then open http://localhost:8000. This server turns off browser caching, so edits show up on a normal reload. Use Chrome or Edge for voice input.
+
+**Voice not heard?** While listening, the bars around the mic follow the input volume. If they stay flat and "No sound from the microphone" appears, Chrome is using the wrong mic. Click the mic icon in the address bar (or open `chrome://settings/content/microphone`) and pick the microphone you're speaking into. Speech recognition always uses Chrome's selected mic.
 
 ## Spoken prompts
 
@@ -43,5 +45,5 @@ Demo without a microphone: open the browser console on the destination screen an
 ## Notes
 
 - Station positions are approximate. Fares and timings are realistic but made up.
-- No backend: speech recognition uses the browser's built-in service, and places not in the built-in list are looked up on OpenStreetMap (Nominatim).
+- No backend: speech recognition uses the browser's built-in service, places not in the built-in list are looked up on OpenStreetMap (Nominatim), and road routes come from the public OSRM server. Without internet it falls back to straight-line estimates.
 - Map data © OpenStreetMap contributors.
