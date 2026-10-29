@@ -7,7 +7,7 @@ Gujarati, Hindi or English.
 ## Flow
 
 1. **Choose language:** ગુજરાતી / हिंदी / English, each written in its own script.
-2. **Greeting:** "Namaste" is spoken in the chosen language.
+2. **Greeting:** "Namaste".
 3. **Where do you want to go?** The question is spoken aloud, then the kiosk listens. Say any place in Ahmedabad, or touch a station on the map.
 4. **Choose a station:** the three stations with the shortest *road* route to the place light up, each with its real walking or auto route drawn on the map, the time and the exit gate. Routes come from OSRM (routing.openstreetmap.de) on OpenStreetMap roads. Up to 2 km is shown as a walk, longer as an auto/cab, with drive times scaled up for city traffic.
 5. **Trip and tickets:** the route is drawn on the map with direction arrows. The panel shows it as a flowchart: landmark pictures for the start, interchange and destination, stops in between as dots, and colour-coded platform badges (with matching footstep stickers in the station) for where to board. Choose the number of tickets with − / +.
