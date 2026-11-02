@@ -9,7 +9,8 @@ const state = {
   trip: null,
   tickets: 1,
   cashIn: 0,          // cash received so far on the payment screen
-  paidBy: null        // 'upi' | 'cash', detected from whichever arrives first
+  paidBy: null,       // 'upi' | 'cash', detected from whichever arrives first
+  issued: []          // one ticket per passenger, made after payment (ticket.js)
 };
 
 const panel = document.getElementById('panel');
@@ -216,8 +217,8 @@ function picHTML(obj, cls = '') {
     : `<span class="pic ${cls}"><span class="pic-emoji">${obj.icon || '📍'}</span></span>`;
 }
 
-function feetSVG() {
-  return `<svg class="feet" viewBox="0 0 24 24" aria-hidden="true">
+function feetSVG(fill = 'currentColor', size = null) {
+  return `<svg class="feet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${fill}" ${size ? `width="${size}" height="${size}"` : ''} aria-hidden="true">
     <ellipse cx="7" cy="16" rx="3.1" ry="4.9"/><circle cx="4.9" cy="9.3" r="1.1"/><circle cx="7.2" cy="8.6" r="1.15"/><circle cx="9.4" cy="9.4" r="1"/>
     <ellipse cx="16.8" cy="9.8" rx="3.1" ry="4.9"/><circle cx="14.6" cy="3.2" r="1"/><circle cx="16.8" cy="2.4" r="1.15"/><circle cx="19" cy="3.1" r="1.1"/>
   </svg>`;
@@ -773,8 +774,7 @@ const SCREENS = {
         <div class="paid-by">${state.paidBy === 'cash' ? `💵 ${t('paidCash')}` : `📱 ${t('paidUpi')}`} · ₹${total}</div>
         <div class="printing"><span class="printer">🖨️</span><span>${t('printing')}</span></div>
         <div class="print-bar"><i></i></div>
-      </div>
-      <div class="panel-foot"><button class="btn btn-go" data-go="lang">${t('done')}<span class="btn-ico">✓</span></button></div>`;
+      </div>`;
   }
 };
 
@@ -874,7 +874,7 @@ function go(screen) {
 }
 
 function resetState() {
-  Object.assign(state, { place: null, suggestions: [], lastMiles: {}, trip: null, tickets: 1, cashIn: 0, paidBy: null });
+  Object.assign(state, { place: null, suggestions: [], lastMiles: {}, trip: null, tickets: 1, cashIn: 0, paidBy: null, issued: [] });
 }
 
 function enter(screen) {
@@ -899,7 +899,8 @@ function enter(screen) {
     MetroMap.showRoute(state.trip);
   }
   if (screen === 'paid') {
-    later(() => go('lang'), 15000);
+    state.issued = issueTickets();
+    later(openTicketPreview, 3500);
   }
 }
 
@@ -973,7 +974,10 @@ document.getElementById('btn-lang').addEventListener('click', () => go('lang'));
 let idleTimer;
 function resetIdle() {
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { if (state.screen !== 'lang') go('lang'); }, 90000);
+  idleTimer = setTimeout(() => {
+    if (ticketPreviewOpen()) resetIdle();
+    else if (state.screen !== 'lang') go('lang');
+  }, 90000);
 }
 ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, resetIdle));
 

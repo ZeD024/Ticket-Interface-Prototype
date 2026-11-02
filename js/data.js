@@ -23,40 +23,40 @@ const LINES = {
 
 // icon = pictogram shown until real landmark photos are added (photo: 'img/stations/<id>.jpg')
 const STATIONS = {
-  'thaltej-gam':   { en: 'Thaltej Gam', gu: 'થલતેજ ગામ', hi: 'थलतेज गाम', lat: 23.0530, lng: 72.5035, icon: '🏘️' },
+  'thaltej-gam':   { en: 'Thaltej Gam', gu: 'થલતેજ ગામ', hi: 'थलतेज गाम', lat: 23.0530, lng: 72.5035, icon: '🛖' },
   'thaltej':       { en: 'Thaltej', gu: 'થલતેજ', hi: 'थलतेज', lat: 23.0490, lng: 72.5185, icon: '🛍️' },
-  'doordarshan':   { en: 'Doordarshan Kendra', gu: 'દૂરદર્શન કેન્દ્ર', hi: 'दूरदर्शन केंद्र', lat: 23.0478, lng: 72.5290, icon: '📡' },
-  'gurukul':       { en: 'Gurukul Road', gu: 'ગુરુકુળ રોડ', hi: 'गुरुकुल रोड', lat: 23.0470, lng: 72.5385, icon: '📚' },
+  'doordarshan':   { en: 'Doordarshan Kendra', gu: 'દૂરદર્શન કેન્દ્ર', hi: 'दूरदर्शन केंद्र', lat: 23.0478, lng: 72.5290, icon: '🗼' },
+  'gurukul':       { en: 'Gurukul Road', gu: 'ગુરુકુળ રોડ', hi: 'गुरुकुल रोड', lat: 23.0470, lng: 72.5385, icon: '📖' },
   'gujarat-uni':   { en: 'Gujarat University', gu: 'ગુજરાત યુનિવર્સિટી', hi: 'गुजरात यूनिवर्सिटी', lat: 23.0452, lng: 72.5470, icon: '🎓' },
-  'commerce':      { en: 'Commerce Six Roads', gu: 'કોમર્સ છ રસ્તા', hi: 'कॉमर्स छह रास्ता', lat: 23.0410, lng: 72.5555, icon: '🏫' },
+  'commerce':      { en: 'Commerce Six Roads', gu: 'કોમર્સ છ રસ્તા', hi: 'कॉमर्स छह रास्ता', lat: 23.0410, lng: 72.5555, icon: '🛣️' },
   'stadium':       { en: 'Stadium', gu: 'સ્ટેડિયમ', hi: 'स्टेडियम', lat: 23.0385, lng: 72.5635, icon: '🏟️' },
   'ohc':           { en: 'Old High Court', gu: 'જૂની હાઈકોર્ટ', hi: 'पुराना हाई कोर्ट', lat: 23.0385, lng: 72.5725, icon: '⚖️', interchange: true },
-  'shahpur':       { en: 'Shahpur', gu: 'શાહપુર', hi: 'शाहपुर', lat: 23.0352, lng: 72.5835, icon: '🌉' },
-  'gheekanta':     { en: 'Gheekanta', gu: 'ઘીકાંટા', hi: 'घीकांटा', lat: 23.0305, lng: 72.5905, icon: '🏪' },
+  'shahpur':       { en: 'Shahpur', gu: 'શાહપુર', hi: 'शाहपुर', lat: 23.0352, lng: 72.5835, icon: '🚪' },
+  'gheekanta':     { en: 'Gheekanta', gu: 'ઘીકાંટા', hi: 'घीकांटा', lat: 23.0305, lng: 72.5905, icon: '🏺' },
   'kalupur':       { en: 'Kalupur Railway Station', gu: 'કાલુપુર રેલવે સ્ટેશન', hi: 'कालूपुर रेलवे स्टेशन', lat: 23.0265, lng: 72.6005, icon: '🚆',
                      alias: ['Ahmedabad railway station', 'Ahmedabad junction', 'Kalupur', 'અમદાવાદ રેલવે સ્ટેશન', 'કાલુપુર', 'अहमदाबाद रेलवे स्टेशन', 'कालूपुर'] },
   'kankaria-east': { en: 'Kankaria East', gu: 'કાંકરિયા પૂર્વ', hi: 'कांकरिया पूर्व', lat: 23.0160, lng: 72.6105, icon: '🎡' },
   'apparel-park':  { en: 'Apparel Park', gu: 'એપેરલ પાર્ક', hi: 'अपैरल पार्क', lat: 23.0150, lng: 72.6220, icon: '👕' },
-  'amraiwadi':     { en: 'Amraiwadi', gu: 'અમરાઈવાડી', hi: 'अमराईवाडी', lat: 23.0135, lng: 72.6330, icon: '🏠' },
+  'amraiwadi':     { en: 'Amraiwadi', gu: 'અમરાઈવાડી', hi: 'अमराईवाडी', lat: 23.0135, lng: 72.6330, icon: '🥭' },
   'rabari':        { en: 'Rabari Colony', gu: 'રબારી કોલોની', hi: 'रबारी कॉलोनी', lat: 23.0100, lng: 72.6440, icon: '🐄' },
   'vastral':       { en: 'Vastral', gu: 'વસ્ત્રાલ', hi: 'वस्त्राल', lat: 23.0065, lng: 72.6545, icon: '🏢' },
   'nirant':        { en: 'Nirant Cross Road', gu: 'નિરાંત ચાર રસ્તા', hi: 'निरांत चार रास्ता', lat: 23.0035, lng: 72.6645, icon: '🚦' },
-  'vastral-gam':   { en: 'Vastral Gam', gu: 'વસ્ત્રાલ ગામ', hi: 'वस्त्राल गाम', lat: 23.0010, lng: 72.6735, icon: '🏘️' },
+  'vastral-gam':   { en: 'Vastral Gam', gu: 'વસ્ત્રાલ ગામ', hi: 'वस्त्राल गाम', lat: 23.0010, lng: 72.6735, icon: '🪣' },
 
   'motera':        { en: 'Motera Stadium', gu: 'મોટેરા સ્ટેડિયમ', hi: 'मोटेरा स्टेडियम', lat: 23.0915, lng: 72.5945, icon: '🏏' },
-  'sabarmati':     { en: 'Sabarmati', gu: 'સાબરમતી', hi: 'साबरमती', lat: 23.0840, lng: 72.5900, icon: '🏞️' },
+  'sabarmati':     { en: 'Sabarmati', gu: 'સાબરમતી', hi: 'साबरमती', lat: 23.0840, lng: 72.5900, icon: '🌊' },
   'aec':           { en: 'AEC', gu: 'એઈસી', hi: 'एईसी', lat: 23.0770, lng: 72.5860, icon: '⚡' },
-  'sabarmati-rly': { en: 'Sabarmati Railway Station', gu: 'સાબરમતી રેલવે સ્ટેશન', hi: 'साबरमती रेलवे स्टेशन', lat: 23.0710, lng: 72.5825, icon: '🚆' },
+  'sabarmati-rly': { en: 'Sabarmati Railway Station', gu: 'સાબરમતી રેલવે સ્ટેશન', hi: 'साबरमती रेलवे स्टेशन', lat: 23.0710, lng: 72.5825, icon: '🚂' },
   'ranip':         { en: 'Ranip', gu: 'રાણીપ', hi: 'राणीप', lat: 23.0650, lng: 72.5785, icon: '🚌' },
   'vadaj':         { en: 'Vadaj', gu: 'વાડજ', hi: 'वाडज', lat: 23.0595, lng: 72.5755, icon: '🛺' },
-  'vijay-nagar':   { en: 'Vijay Nagar', gu: 'વિજય નગર', hi: 'विजय नगर', lat: 23.0540, lng: 72.5730, icon: '🏡' },
+  'vijay-nagar':   { en: 'Vijay Nagar', gu: 'વિજય નગર', hi: 'विजय नगर', lat: 23.0540, lng: 72.5730, icon: '🚩' },
   'usmanpura':     { en: 'Usmanpura', gu: 'ઉસ્માનપુરા', hi: 'उस्मानपुरा', lat: 23.0470, lng: 72.5710, icon: '🌳' },
-  'gandhigram':    { en: 'Gandhigram', gu: 'ગાંધીગ્રામ', hi: 'गांधीग्राम', lat: 23.0290, lng: 72.5705, icon: '🚉' },
+  'gandhigram':    { en: 'Gandhigram', gu: 'ગાંધીગ્રામ', hi: 'गांधीग्राम', lat: 23.0290, lng: 72.5705, icon: '👓' },
   'paldi':         { en: 'Paldi', gu: 'પાલડી', hi: 'पालड़ी', lat: 23.0185, lng: 72.5655, icon: '🏛️' },
-  'shreyas':       { en: 'Shreyas', gu: 'શ્રેયસ', hi: 'श्रेयस', lat: 23.0085, lng: 72.5600, icon: '🛤️' },
-  'rajiv-nagar':   { en: 'Rajiv Nagar', gu: 'રાજીવ નગર', hi: 'राजीव नगर', lat: 22.9995, lng: 72.5565, icon: '🏘️' },
-  'jivraj':        { en: 'Jivraj Park', gu: 'જીવરાજ પાર્ક', hi: 'जीवराज पार्क', lat: 22.9910, lng: 72.5535, icon: '🌳' },
-  'apmc':          { en: 'APMC', gu: 'એપીએમસી', hi: 'एपीएमसी', lat: 22.9825, lng: 72.5505, icon: '🥬' }
+  'shreyas':       { en: 'Shreyas', gu: 'શ્રેયસ', hi: 'श्रेयस', lat: 23.0085, lng: 72.5600, icon: '🚧' },
+  'rajiv-nagar':   { en: 'Rajiv Nagar', gu: 'રાજીવ નગર', hi: 'राजीव नगर', lat: 22.9995, lng: 72.5565, icon: '🏠' },
+  'jivraj':        { en: 'Jivraj Park', gu: 'જીવરાજ પાર્ક', hi: 'जीवराज पार्क', lat: 22.9910, lng: 72.5535, icon: '🌼' },
+  'apmc':          { en: 'APMC', gu: 'એપીએમસી', hi: 'एपीएमसी', lat: 22.9825, lng: 72.5505, icon: '🥕' }
 };
 
 // The station this kiosk stands in.
@@ -65,10 +65,10 @@ const KIOSK_STATION = 'kalupur';
 // Colour-coded platforms. Footstep stickers of the same colour on the station floor
 // lead passengers to each platform. At the interchange the Red line uses 3 and 4.
 const PLATFORMS = {
-  1: { color: '#111827', ink: '#ffffff' },  // black
-  2: { color: '#ffffff', ink: '#111827' },  // white
-  3: { color: '#facc15', ink: '#111827' },  // yellow
-  4: { color: '#f97316', ink: '#ffffff' }   // orange
+  1: { color: '#111827', ink: '#ffffff', name: { en: 'Black', gu: 'કાળો', hi: 'काला' } },
+  2: { color: '#ffffff', ink: '#111827', name: { en: 'White', gu: 'સફેદ', hi: 'सफ़ेद' } },
+  3: { color: '#facc15', ink: '#111827', name: { en: 'Yellow', gu: 'પીળો', hi: 'पीला' } },
+  4: { color: '#f97316', ink: '#ffffff', name: { en: 'Orange', gu: 'કેસરી', hi: 'नारंगी' } }
 };
 
 // Well-known places that are not stations. Stations are searchable too.
@@ -181,7 +181,9 @@ const T = {
   paidUpi:     { en: 'Paid by UPI', gu: 'UPI થી ચૂકવ્યા', hi: 'UPI से भुगतान' },
   paidCash:    { en: 'Paid in cash', gu: 'રોકડા ચૂકવ્યા', hi: 'नकद भुगतान' },
   printing:    { en: 'Your ticket is being printed…', gu: 'તમારી ટિકિટ છપાઈ રહી છે…', hi: 'आपका टिकट छप रहा है…' },
-  done:        { en: 'Done', gu: 'પૂરું', hi: 'हो गया' },
+  validTill:   { en: 'Valid till', gu: 'માન્ય સમય', hi: 'मान्य समय' },
+  ticketNo:    { en: 'Ticket', gu: 'ટિકિટ', hi: 'टिकट' },
+  scanGate:    { en: 'Scan at the gate', gu: 'ગેટ પર સ્કેન કરો', hi: 'गेट पर स्कैन करें' },
   home:        { en: 'Start again', gu: 'ફરી શરૂ કરો', hi: 'फिर से शुरू करें' }
 };
 
