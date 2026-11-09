@@ -184,6 +184,7 @@ const T = {
   validTill:   { en: 'Valid till', gu: 'માન્ય સમય', hi: 'मान्य समय' },
   ticketNo:    { en: 'Ticket', gu: 'ટિકિટ', hi: 'टिकट' },
   scanGate:    { en: 'Scan at the gate', gu: 'ગેટ પર સ્કેન કરો', hi: 'गेट पर स्कैन करें' },
+  tapToHear:   { en: 'Touch any picture to hear it', gu: 'સાંભળવા માટે કોઈપણ ચિત્રને સ્પર્શ કરો', hi: 'सुनने के लिए किसी भी चित्र को छुएँ' },
   home:        { en: 'Start again', gu: 'ફરી શરૂ કરો', hi: 'फिर से शुरू करें' }
 };
 
@@ -192,3 +193,40 @@ const LANGS = [
   { code: 'hi', symbol: 'अ', label: 'हिंदी', speech: 'hi-IN' },
   { code: 'en', symbol: 'Aa', label: 'English', speech: 'en-IN' }
 ];
+
+// Spoken descriptions for the trip review. Each sentence is put together from these
+// phrases plus recorded station/place names and numbers (see tools/make_voices.py),
+// so every phrase must make sense with a name or number spoken right after it.
+// An empty phrase is skipped. Keep each entry on one line: the voice script reads them.
+const SAY = {
+  departPre:   { en: 'Your journey starts here, at', gu: 'તમારી યાત્રા અહીંથી શરૂ થશે:', hi: 'आपकी यात्रा यहाँ से शुरू होगी:' },
+  changePre:   { en: 'Change trains at', gu: 'અહીં ટ્રેન બદલો:', hi: 'यहाँ ट्रेन बदलें:' },
+  changeBlue:  { en: 'and take the Blue line.', gu: 'અને બ્લુ લાઇન પકડો.', hi: 'और ब्लू लाइन पकड़ें।' },
+  changeRed:   { en: 'and take the Red line.', gu: 'અને રેડ લાઇન પકડો.', hi: 'और रेड लाइन पकड़ें।' },
+  getOffPre:   { en: 'Get off the train at', gu: 'અહીં ટ્રેનમાંથી ઊતરો:', hi: 'यहाँ ट्रेन से उतरें:' },
+  pf1:         { en: 'Board the train from platform 1. Follow the black footsteps.', gu: 'પ્લેટફોર્મ નંબર 1 પરથી ટ્રેન પકડો. કાળાં પગલાંની પાછળ ચાલો.', hi: 'प्लेटफ़ॉर्म नंबर 1 से ट्रेन पकड़ें। काले पैरों के निशान के पीछे चलें।' },
+  pf2:         { en: 'Board the train from platform 2. Follow the white footsteps.', gu: 'પ્લેટફોર્મ નંબર 2 પરથી ટ્રેન પકડો. સફેદ પગલાંની પાછળ ચાલો.', hi: 'प्लेटफ़ॉर्म नंबर 2 से ट्रेन पकड़ें। सफ़ेद पैरों के निशान के पीछे चलें।' },
+  pf3:         { en: 'Board the train from platform 3. Follow the yellow footsteps.', gu: 'પ્લેટફોર્મ નંબર 3 પરથી ટ્રેન પકડો. પીળાં પગલાંની પાછળ ચાલો.', hi: 'प्लेटफ़ॉर्म नंबर 3 से ट्रेन पकड़ें। पीले पैरों के निशान के पीछे चलें।' },
+  pf4:         { en: 'Board the train from platform 4. Follow the orange footsteps.', gu: 'પ્લેટફોર્મ નંબર 4 પરથી ટ્રેન પકડો. કેસરી પગલાંની પાછળ ચાલો.', hi: 'प्लेटफ़ॉर्म नंबर 4 से ट्रेन पकड़ें। नारंगी पैरों के निशान के पीछे चलें।' },
+  rideBlue:    { en: 'Travel on the Blue line for', gu: 'બ્લુ લાઇન પર', hi: 'ब्लू लाइन पर' },
+  rideRed:     { en: 'Travel on the Red line for', gu: 'રેડ લાઇન પર', hi: 'रेड लाइन पर' },
+  ridePost:    { en: 'stops.', gu: 'સ્ટેશન સુધી મુસાફરી કરો.', hi: 'स्टेशन तक सफ़र करें।' },
+  ridePostOne: { en: 'stop.', gu: 'સ્ટેશન સુધી મુસાફરી કરો.', hi: 'स्टेशन तक सफ़र करें।' },
+  exitPre:     { en: 'Leave the station by exit gate', gu: 'બહાર નીકળવા માટે ગેટ નંબર', hi: 'बाहर निकलने के लिए गेट नंबर' },
+  exitPost:    { en: '', gu: 'લો.', hi: 'लें।' },
+  walkPre:     { en: 'Then walk for', gu: 'પછી', hi: 'फिर' },
+  walkPost:    { en: 'minutes.', gu: 'મિનિટ ચાલો.', hi: 'मिनट पैदल चलें।' },
+  cabPre:      { en: 'Then take an auto or a cab for about', gu: 'પછી લગભગ', hi: 'फिर लगभग' },
+  cabPost:     { en: 'minutes.', gu: 'મિનિટ ઓટો કે કેબમાં જાઓ.', hi: 'मिनट ऑटो या कैब से जाएँ।' },
+  destPre:     { en: 'Your destination is', gu: 'તમારી મંજિલ છે:', hi: 'आपकी मंज़िल है:' },
+  destHere:    { en: 'This is your destination.', gu: 'આ તમારી મંજિલ છે.', hi: 'यह आपकी मंज़िल है।' },
+  nextPre:     { en: 'The next train comes in', gu: 'આગામી ટ્રેન', hi: 'अगली ट्रेन' },
+  nextPost:    { en: 'minutes.', gu: 'મિનિટમાં આવશે.', hi: 'मिनट में आएगी।' },
+  totalPre:    { en: 'The whole journey takes about', gu: 'આખી મુસાફરીમાં લગભગ', hi: 'पूरी यात्रा में लगभग' },
+  totalPost:   { en: 'minutes.', gu: 'મિનિટ લાગશે.', hi: 'मिनट लगेंगे।' },
+  farePre:     { en: 'The fare is', gu: 'ભાડું એક વ્યક્તિના', hi: 'किराया प्रति व्यक्ति' },
+  farePost:    { en: 'rupees for each person.', gu: 'રૂપિયા છે.', hi: 'रुपये है।' }
+};
+
+// Recorded names for known places live at audio/<lang>/place/<slug>.mp3.
+const placeSlug = en => en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

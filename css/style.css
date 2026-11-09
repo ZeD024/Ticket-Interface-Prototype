@@ -1402,3 +1402,46 @@ button {
 .dp-pager { align-self: center; color: #fff; font-size: 1.7rem; font-weight: 700; }
 .dp-note { min-height: 1.6em; text-align: center; color: #d5dae0; font-size: 1.4rem; font-weight: 600; }
 .dp-exit { background: #3a4049; color: #fff; }
+
+/* ---------- tap-to-hear on the trip review ---------- */
+
+[data-say] { cursor: pointer; border-radius: 0.9rem; transition: transform 0.12s; }
+[data-say]:active { transform: scale(0.96); }
+[data-say]:focus-visible { outline: 0.25rem solid var(--accent); outline-offset: 0.2rem; }
+
+/* while its sentence plays, the tapped item glows */
+[data-say].saying { animation: saying 0.9s ease-in-out infinite; }
+@keyframes saying {
+  0%, 100% { box-shadow: 0 0 0 0.25rem rgba(255, 196, 0, 0.9); background-color: rgba(255, 196, 0, 0.12); }
+  50% { box-shadow: 0 0 0 0.6rem rgba(255, 196, 0, 0.35); background-color: rgba(255, 196, 0, 0.22); }
+}
+.fnode.saying { animation-duration: 0.9s; }
+
+.say-wrap { position: relative; display: inline-block; }
+.say-badge {
+  position: absolute;
+  right: -0.9rem;
+  bottom: -0.5rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0.1rem 0.35rem rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+}
+.saying .say-badge { background: #ffc400; }
+
+.pf-say { display: inline-block; }
+
+.say-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: -0.6rem 0 0.9rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.say-hint-ico { font-size: 1.7rem; }

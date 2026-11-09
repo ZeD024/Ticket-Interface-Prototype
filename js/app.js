@@ -301,7 +301,70 @@ function say(clip, done = () => {}) {
   audio.play().catch(fallback);
 }
 
+/* Tap-to-hear on the trip review: an element with data-say speaks a sentence made of
+   recorded parts, e.g. "say:departPre station:kalupur" plays the phrase and then the name. */
+
+let sayRun = null;
+
+function clipUrl(part) {
+  const [kind, key] = part.split(':');
+  if (kind === 'say' && !(SAY[key] && SAY[key][state.lang])) return null;
+  return `audio/${state.lang}/${kind}/${key}.mp3`;
+}
+
+function sayParts(parts, el) {
+  stopSpeaking();
+  const urls = parts.map(clipUrl).filter(Boolean);
+  const run = { el };
+  sayRun = run;
+  el && el.classList.add('saying');
+  let i = 0;
+  const next = () => {
+    if (sayRun !== run) return;
+    if (i >= urls.length) { stopSpeaking(); return; }
+    const audio = new Audio(urls[i++]);
+    clipAudio = audio;
+    audio.onended = () => setTimeout(next, 60);
+    audio.onerror = next;   // a missing clip just leaves that word out
+    audio.play().catch(next);
+  };
+  next();
+}
+
+// The parts for each kind of thing on the trip review.
+const num = n => (n >= 1 && n <= 99 ? `num:${n}` : null);
+const SPOKEN = {
+  depart: id => ['say:departPre', `station:${id}`],
+  change: (id, line) => ['say:changePre', `station:${id}`, `say:change${line === 'blue' ? 'Blue' : 'Red'}`],
+  getOff: id => ['say:getOffPre', `station:${id}`],
+  platform: pf => [`say:pf${pf}`],
+  ride: leg => {
+    const stops = leg.ids.length - 1;
+    return [`say:ride${leg.line === 'blue' ? 'Blue' : 'Red'}`, num(stops), stops === 1 ? 'say:ridePostOne' : 'say:ridePost'];
+  },
+  exit: gate => ['say:exitPre', num(gate), 'say:exitPost'],
+  lastMile: lm => lm.mode === 'walk'
+    ? ['say:walkPre', num(lm.mins), 'say:walkPost']
+    : ['say:cabPre', num(lm.mins), 'say:cabPost'],
+  // Places found online have no recorded name, so they are only called "your destination".
+  dest: (place, to) => {
+    if (!place) return ['say:destPre', `station:${to}`];
+    if (place.stationId) return ['say:destPre', `station:${place.stationId}`];
+    if (place.slug) return ['say:destPre', `place:${place.slug}`];
+    return ['say:destHere'];
+  },
+  next: mins => ['say:nextPre', num(mins), 'say:nextPost'],
+  total: mins => ['say:totalPre', num(mins), 'say:totalPost'],
+  fare: rupees => ['say:farePre', num(rupees), 'say:farePost']
+};
+
+const sayAttr = parts => `data-say="${parts.filter(Boolean).join(' ')}" role="button" tabindex="0"`;
+
 function stopSpeaking() {
+  if (sayRun) {
+    sayRun.el && sayRun.el.classList.remove('saying');
+    sayRun = null;
+  }
   if (clipAudio) {
     clipAudio.onended = clipAudio.onerror = null;
     clipAudio.pause();
@@ -573,7 +636,8 @@ async function handleSpoken(alternatives) {
   let place = null;
   if (local) {
     const it = local.item;
-    place = { name: { en: it.en, gu: it.gu, hi: it.hi }, lat: it.lat, lng: it.lng, icon: it.icon, photo: it.photo, stationId: local.id };
+    place = { name: { en: it.en, gu: it.gu, hi: it.hi }, lat: it.lat, lng: it.lng, icon: it.icon, photo: it.photo,
+      stationId: local.id, slug: local.kind === 'place' ? placeSlug(it.en) : undefined };
   } else {
     place = await onlineSearch(stripFillers(normText(heard)) || heard);
   }
@@ -698,13 +762,14 @@ const SCREENS = {
     return `
       <div class="screen screen-trip">
         <div class="trip-head">
-          <h1>${destName}</h1>
+          <h1 ${sayAttr(SPOKEN.dest(tr.place, tr.to))}>${destName}</h1>
           <div class="trip-stats">
-            <span class="stat"><span class="stat-ico">🚇</span><span class="stat-label">${t('nextTrain')}</span><b>${tr.wait} ${t('min')}</b></span>
-            <span class="stat"><span class="stat-ico">⏱️</span><span class="stat-label">${t('totalTime')}</span><b>${tr.totalMins} ${t('min')}</b></span>
+            <span class="stat" ${sayAttr(SPOKEN.next(tr.wait))}><span class="stat-ico">🚇</span><span class="stat-label">${t('nextTrain')}</span><b>${tr.wait} ${t('min')}</b></span>
+            <span class="stat" ${sayAttr(SPOKEN.total(tr.totalMins))}><span class="stat-ico">⏱️</span><span class="stat-label">${t('totalTime')}</span><b>${tr.totalMins} ${t('min')}</b></span>
           </div>
         </div>
 
+        <div class="say-hint"><span class="say-hint-ico" aria-hidden="true">🔊</span>${t('tapToHear')}</div>
         ${flowHTML(tr)}
 
         <div class="fare-box">
@@ -718,7 +783,7 @@ const SCREENS = {
             <button class="count-btn" data-step="1" aria-label="+" ${state.tickets >= 6 ? 'disabled' : ''}>+</button>
           </div>
           <div class="fare-calc">
-            <span class="fare-each">👤 ₹${tr.fare} <small>${t('perPerson')}</small></span>
+            <span class="fare-each" ${sayAttr(SPOKEN.fare(tr.fare))}>👤 ₹${tr.fare} <small>${t('perPerson')}</small></span>
             <span class="money">${moneyHTML(total)}</span>
             <span class="fare-total">${t('total')} <b>₹${total}</b></span>
           </div>
@@ -785,42 +850,47 @@ function flowHTML(tr) {
   const nodeCount = tr.legs.length + 1 + (lm ? 1 : 0);
   const maxDots = { 2: 12, 3: 7, 4: 4 }[nodeCount] || 3;
 
-  const node = (role, obj, name, chip, badge = '') => `
-    <div class="fnode role-${role}">
+  // Every picture, platform, exit and connector can be tapped to hear what it means.
+  const node = (role, obj, name, chip, spoken, badge = '') => `
+    <div class="fnode role-${role}" ${sayAttr(spoken)}>
       <span class="fchip">${chip}</span>
-      ${picHTML(obj, 'pic-flow')}
+      <span class="say-wrap">${picHTML(obj, 'pic-flow')}<span class="say-badge" aria-hidden="true">🔊</span></span>
       <span class="fname">${name}</span>
       ${badge}
     </div>`;
+  const pf = n => `<span class="pf-say" ${sayAttr(SPOKEN.platform(n))}>${platformBadge(n)}</span>`;
 
   const ride = leg => {
     const between = leg.ids.length - 2;
     const shown = Math.min(between, maxDots);
     return `
-      <div class="fconn" style="--c:${LINES[leg.line].color}">
+      <div class="fconn" style="--c:${LINES[leg.line].color}" ${sayAttr(SPOKEN.ride(leg))}>
         <span class="fline">${'<i></i>'.repeat(shown)}${between > shown ? '<em>+' + (between - shown) + '</em>' : ''}</span>
         <span class="fcap"><span class="line-tag" style="background:${LINES[leg.line].color}">🚇 ${leg.ids.length - 1}</span><small>${t(leg.ids.length === 2 ? 'stop' : 'stops')}</small></span>
       </div>`;
   };
 
-  let html = node('start', STATIONS[KIOSK_STATION], stationName(KIOSK_STATION), t('youAreHere'), platformBadge(tr.legs[0].platform));
+  let html = node('start', STATIONS[KIOSK_STATION], stationName(KIOSK_STATION), t('youAreHere'),
+    SPOKEN.depart(KIOSK_STATION), pf(tr.legs[0].platform));
   tr.legs.forEach((leg, i) => {
     html += ride(leg);
     const next = tr.legs[i + 1];
     if (next) {
       const at = next.ids[0];
-      html += node('change', STATIONS[at], stationName(at), `⇄ ${t('change')}`, platformBadge(next.platform));
+      html += node('change', STATIONS[at], stationName(at), `⇄ ${t('change')}`, SPOKEN.change(at, next.line), pf(next.platform));
     }
   });
-  html += node('dest', STATIONS[tr.to], stationName(tr.to), t('getOff'), `<span class="exit-sign">EXIT <b>${tr.gate}</b></span>`);
+  html += node('dest', STATIONS[tr.to], stationName(tr.to), t('getOff'), SPOKEN.getOff(tr.to),
+    `<span class="exit-sign" ${sayAttr(SPOKEN.exit(tr.gate))}>EXIT <b>${tr.gate}</b></span>`);
   if (lm) {
     const walk = lm.mode === 'walk';
     html += `
-      <div class="fconn fconn-${lm.mode}">
+      <div class="fconn fconn-${lm.mode}" ${sayAttr(SPOKEN.lastMile(lm))}>
         <span class="fline"></span>
         <span class="fcap"><span class="meta ${walk ? 'meta-walk' : 'meta-cab'}"><span class="meta-ico">${walk ? '🚶' : '🛺'}</span>${lm.mins}</span><small>${t('min')}</small></span>
       </div>`;
-    html += node('place', tr.place, tr.place.name[state.lang] || tr.place.name.en, '📍', `<span class="fdist">${fmtDist(lm.dist)}</span>`);
+    html += node('place', tr.place, tr.place.name[state.lang] || tr.place.name.en, '📍',
+      SPOKEN.dest(tr.place, tr.to), `<span class="fdist">${fmtDist(lm.dist)}</span>`);
   }
   return `<div class="flow flow-${nodeCount}">${html}</div>`;
 }
@@ -934,6 +1004,9 @@ function renderLegend() {
 /* ---------- events ---------- */
 
 panel.addEventListener('click', e => {
+  const spoken = e.target.closest('[data-say]');
+  if (spoken) { sayParts(spoken.dataset.say.split(' '), spoken); return; }
+
   const el = e.target.closest('button, .qr-wrap, .cash-anim');
   if (!el) return;
 
@@ -958,6 +1031,14 @@ panel.addEventListener('click', e => {
   // Demo stand-ins for the payment hardware: tap the QR = UPI received, tap the slot = cash inserted.
   if (el.classList.contains('qr-wrap')) { receive('upi'); return; }
   if (el.classList.contains('cash-anim')) { receive('cash'); }
+});
+
+panel.addEventListener('keydown', e => {
+  const spoken = e.target.closest('[data-say]');
+  if (spoken && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    sayParts(spoken.dataset.say.split(' '), spoken);
+  }
 });
 
 // Presenter shortcuts on the payment screen: U = UPI payment arrives, C = insert the next note.
