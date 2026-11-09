@@ -184,6 +184,17 @@ const T = {
   validTill:   { en: 'Valid till', gu: 'માન્ય સમય', hi: 'मान्य समय' },
   ticketNo:    { en: 'Ticket', gu: 'ટિકિટ', hi: 'टिकट' },
   scanGate:    { en: 'Scan at the gate', gu: 'ગેટ પર સ્કેન કરો', hi: 'गेट पर स्कैन करें' },
+  followSteps: { en: 'Follow these footsteps to your train', gu: 'આ પગલાંની પાછળ ચાલીને ટ્રેન સુધી પહોંચો', hi: 'इन पैरों के निशान के पीछे चलकर ट्रेन तक पहुँचें' },
+  towards:     { en: 'Towards {x}', gu: '{x} તરફ', hi: '{x} की ओर' },
+  justPassed:  { en: 'Just passed', gu: 'હમણાં પસાર થયું', hi: 'अभी गुज़रा' },
+  nextStation: { en: 'Next station', gu: 'આગામી સ્ટેશન', hi: 'अगला स्टेशन' },
+  thisStation: { en: 'This station', gu: 'આ સ્ટેશન', hi: 'यह स्टेशन' },
+  trainTo:     { en: 'This train goes to', gu: 'આ ટ્રેન અહીં સુધી જાય છે', hi: 'यह ट्रेन यहाँ तक जाती है' },
+  toGo:        { en: '{n} stations to go', gu: 'હજુ {n} સ્ટેશન બાકી', hi: 'अभी {n} स्टेशन बाकी' },
+  toGoOne:     { en: '1 station to go', gu: 'હજુ 1 સ્ટેશન બાકી', hi: 'अभी 1 स्टेशन बाकी' },
+  lastStation: { en: 'Last station · the train ends here', gu: 'છેલ્લું સ્ટેશન · ટ્રેન અહીં પૂરી થાય છે', hi: 'आख़िरी स्टेशन · ट्रेन यहीं तक है' },
+  changeFor:   { en: 'Change here for', gu: 'અહીં બદલો:', hi: 'यहाँ बदलें:' },
+  takeTicket:  { en: 'Take your ticket', gu: 'તમારી ટિકિટ લો', hi: 'अपना टिकट लें' },
   tapToHear:   { en: 'Touch any picture to hear it', gu: 'સાંભળવા માટે કોઈપણ ચિત્રને સ્પર્શ કરો', hi: 'सुनने के लिए किसी भी चित्र को छुएँ' },
   home:        { en: 'Start again', gu: 'ફરી શરૂ કરો', hi: 'फिर से शुरू करें' }
 };
@@ -199,6 +210,7 @@ const LANGS = [
 // so every phrase must make sense with a name or number spoken right after it.
 // An empty phrase is skipped. Keep each entry on one line: the voice script reads them.
 const SAY = {
+  nextStation: { en: 'Next station:', gu: 'આગામી સ્ટેશન:', hi: 'अगला स्टेशन:' },
   departPre:   { en: 'Your journey starts here, at', gu: 'તમારી યાત્રા અહીંથી શરૂ થશે:', hi: 'आपकी यात्रा यहाँ से शुरू होगी:' },
   changePre:   { en: 'Change trains at', gu: 'અહીં ટ્રેન બદલો:', hi: 'यहाँ ट्रेन बदलें:' },
   changeBlue:  { en: 'and take the Blue line.', gu: 'અને બ્લુ લાઇન પકડો.', hi: 'और ब्लू लाइन पकड़ें।' },

@@ -1445,3 +1445,175 @@ button {
   color: var(--ink-2);
 }
 .say-hint-ico { font-size: 1.7rem; }
+
+/* ---------- station guide after payment: footstep stickers in an illustrated concourse ---------- */
+
+.station-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 1100;
+  background: #1f2328;
+  animation: screen-in 0.4s ease-out;
+}
+.station-guide[hidden] { display: none; }
+.station-guide > svg { display: block; width: 100%; height: 100%; }
+.guide-caption svg { display: block; flex: none; }
+.esc-move { animation: esc-up 0.9s linear infinite; }
+@keyframes esc-up { to { transform: translateY(-18px); } }
+.lamp { filter: drop-shadow(0 0 10px rgba(255, 236, 170, 0.9)); }
+.pin-off { opacity: 0.6; }
+.pin-on .pf-pin { animation: pin-bob 1.4s ease-in-out infinite; }
+
+.trail-off { opacity: 0.7; }
+.trail-off .fp-glow { opacity: 0; }
+.trail-on .fp-glow { animation: fp-glow 2.4s ease-in-out infinite; opacity: 0.45; }
+@keyframes fp-glow {
+  0%, 60%, 100% { opacity: 0.45; }
+  20% { opacity: 1; }
+}
+@keyframes pin-bob { 50% { translate: 0 -10px; } }
+
+.guide-caption {
+  position: absolute;
+  left: 1.25rem;
+  top: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem 0.5rem 0.6rem;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 1.4rem;
+  box-shadow: var(--shadow);
+}
+
+.screen-paid { justify-content: flex-start; padding-top: 2rem; }
+.paid-row { display: flex; align-items: center; gap: 1.5rem; text-align: left; margin-bottom: 1.75rem; }
+.paid-row .tick { width: 7rem; height: 7rem; margin: 0; flex: none; }
+.paid-row .screen-title { margin-bottom: 0.4rem; }
+.paid-row .paid-by { margin: 0; display: inline-block; }
+
+.guide-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  width: 100%;
+  padding: 1.6rem 1.8rem;
+  border-radius: 1.6rem;
+  background: var(--bg);
+  border: 0.25rem solid var(--line);
+  margin-bottom: 2rem;
+  text-align: left;
+}
+.guide-arrow { font-size: 3.6rem; animation: point-left 1.2s ease-in-out infinite; }
+.guide-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem 0.6rem 0.8rem;
+  border-radius: 1rem;
+  background: var(--pf);
+  color: var(--pf-ink);
+  border: 0.25rem solid #111827;
+  flex: none;
+}
+.guide-badge .feet { width: 4rem; height: 4rem; fill: currentColor; }
+.guide-badge .pf-text small { font-size: 1.1rem; }
+.guide-badge .pf-text b { font-size: 3.6rem; }
+.guide-text { font-size: 2.1rem; font-weight: 800; line-height: 1.25; }
+.guide-card .say-badge { right: 0.8rem; bottom: 0.8rem; }
+
+/* ---------- demo: passenger information display inside the train (fixed 1280×720 px) ---------- */
+
+.pid {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  background: radial-gradient(ellipse at 50% 60%, #15213a, #0b1220 70%);
+  color: #fff;
+  font-family: var(--font);
+  transform-origin: 0 0;
+  overflow: hidden;
+}
+.pid-map { position: absolute; inset: 0; display: block; }
+.pid-band {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 168px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 16px 26px 0;
+  background: linear-gradient(#111a2e, #0f172a);
+  border-bottom: 2px solid #23304d;
+}
+.pid-stripe { position: absolute; inset: 0 0 auto 0; height: 10px; }
+.pid-tile { flex: none; display: grid; place-items: center; background: #fff; border-radius: 14px; }
+.pid-tile svg { display: block; }
+
+.pid-side { width: 270px; flex: none; }
+.pid-side small { display: block; font-size: 15px; font-weight: 700; color: #94a3b8; margin-bottom: 6px; }
+.pid-side-row { display: flex; align-items: center; gap: 10px; }
+.pid-side-row b { display: block; font-size: 20px; line-height: 1.2; color: #e2e8f0; }
+.pid-side-row em, .pid-main h2 em {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  background: #cbd5e1;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.pid-empty { font-size: 26px; color: #475569; height: 54px; }
+.pid-side:first-of-type { opacity: 0.8; }
+
+.pid-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(253, 224, 71, 0.55);
+}
+.pid-main small { display: block; font-size: 18px; font-weight: 800; color: #fde047; }
+.pid-main h2 { margin: 2px 0; font-size: 40px; line-height: 1.1; font-weight: 800; }
+.pid-alt { font-size: 17px; color: #cbd5e1; margin-right: 10px; }
+.pid-chip { display: inline-block; font-size: 16px; font-weight: 800; color: #fff; padding: 3px 10px; border-radius: 8px; }
+.pid-xchip { background: rgba(167, 139, 250, 0.25); border: 2px solid #a78bfa; }
+.pid-xchip span { padding: 1px 8px; border-radius: 6px; margin-left: 4px; }
+.pid-alert { animation: pid-alert 1s ease-in-out infinite; }
+@keyframes pid-alert { 50% { background: rgba(253, 224, 71, 0.22); } }
+
+.pid-togo {
+  position: absolute;
+  top: 652px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.pid-dot { fill: #0b1220; transition: fill 0.3s; }
+.pid-num { font-size: 12px; font-weight: 800; fill: #e2e8f0; }
+.pid-name { font-size: 13px; font-weight: 600; fill: #94a3b8; }
+.pid-stop.passed .pid-dot { fill: #475569; }
+.pid-stop.passed .pid-name { fill: #64748b; }
+.pid-stop.next .pid-dot { fill: #fde047; }
+.pid-stop.next .pid-num { fill: #111827; }
+.pid-stop.next .pid-name { fill: #fde047; font-size: 15px; font-weight: 800; }
+.pid-end .pid-name, .pid-change .pid-name { font-weight: 800; fill: #e2e8f0; }
+.pid-pulse { animation: pid-pulse 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pid-pulse { from { transform: scale(0.75); opacity: 0.9; } to { transform: scale(1.6); opacity: 0; } }
+
+.dp-train { background: #2563eb; color: #fff; }
+.dp-line { border: 0.25rem solid transparent; }
+.dp-line.on { border-color: var(--c); box-shadow: inset 0 -0.5rem 0 var(--c); }

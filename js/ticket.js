@@ -168,6 +168,7 @@ function openTicketPreview() {
       <button class="btn dp-exit" data-dp="exit">✕ Exit preview</button>
       <a class="btn btn-go dp-save" data-save="one" aria-disabled="true">Preparing PDF…</a>
       ${count > 1 ? '<a class="btn btn-go dp-save" data-save="all" aria-disabled="true">Preparing PDF…</a>' : ''}
+      <button class="btn dp-train" data-dp="train">▶ Inside the train</button>
     </div>
     <div class="dp-note" role="status"></div>`;
   previewEl.hidden = false;
@@ -290,6 +291,7 @@ previewEl.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (!ticketPreviewOpen()) return;
   if (e.key === 'Escape') closeTicketPreview();
+  if (!previewEl.querySelector('.ticket')) return;
   if (state.issued.length > 1 && e.key === 'ArrowLeft') showTicket(preview.index - 1);
   if (state.issued.length > 1 && e.key === 'ArrowRight') showTicket(preview.index + 1);
 });

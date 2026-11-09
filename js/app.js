@@ -830,15 +830,32 @@ const SCREENS = {
       <div class="panel-foot">${backBtn('trip')}</div>`;
   },
 
+  // The map side shows the station photo with the footstep trail (guide.js).
   paid() {
     const total = state.trip.fare * state.tickets;
+    const pf = state.trip.legs[0].platform;
     return `
       <div class="screen screen-paid">
-        <div class="tick" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-17"/></svg></div>
-        <h1 class="screen-title">${t('paid')}</h1>
-        <div class="paid-by">${state.paidBy === 'cash' ? `💵 ${t('paidCash')}` : `📱 ${t('paidUpi')}`} · ₹${total}</div>
+        <div class="paid-row">
+          <div class="tick" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-17"/></svg></div>
+          <div>
+            <h1 class="screen-title">${t('paid')}</h1>
+            <div class="paid-by">${state.paidBy === 'cash' ? `💵 ${t('paidCash')}` : `📱 ${t('paidUpi')}`} · ₹${total}</div>
+          </div>
+        </div>
+        <div class="guide-card" ${sayAttr(SPOKEN.platform(pf))}>
+          <span class="guide-arrow" aria-hidden="true">👈</span>
+          <span class="guide-badge" style="--pf:${PLATFORMS[pf].color};--pf-ink:${PLATFORMS[pf].ink}">
+            ${feetSVG()}<span class="pf-text"><small>${t('platform')}</small><b>${pf}</b></span>
+          </span>
+          <span class="guide-text">${t('followSteps')}</span>
+          <span class="say-badge" aria-hidden="true">🔊</span>
+        </div>
         <div class="printing"><span class="printer">🖨️</span><span>${t('printing')}</span></div>
         <div class="print-bar"><i></i></div>
+      </div>
+      <div class="panel-foot">
+        <button class="btn btn-go" data-take-ticket>🎫 ${t('takeTicket')}<span class="btn-ico">→</span></button>
       </div>`;
   }
 };
@@ -934,6 +951,7 @@ function go(screen) {
   stopSpeaking();
   if (screen === 'lang') resetState();
   if (screen === 'pay') Object.assign(state, { cashIn: 0, paidBy: null });
+  if (screen !== 'paid') hideStationGuide();
   state.screen = screen;
   panel.innerHTML = SCREENS[screen]();
   panel.dataset.screen = screen;
@@ -970,7 +988,9 @@ function enter(screen) {
   }
   if (screen === 'paid') {
     state.issued = issueTickets();
-    later(openTicketPreview, 3500);
+    showStationGuide(state.trip.legs[0].platform, state.trip.legs[0].line);
+    const card = panel.querySelector('.guide-card');
+    later(() => sayParts(card.dataset.say.split(' '), card), 900);
   }
 }
 
@@ -1006,6 +1026,7 @@ function renderLegend() {
 panel.addEventListener('click', e => {
   const spoken = e.target.closest('[data-say]');
   if (spoken) { sayParts(spoken.dataset.say.split(' '), spoken); return; }
+  if (e.target.closest('[data-take-ticket]')) { stopSpeaking(); openTicketPreview(); return; }
 
   const el = e.target.closest('button, .qr-wrap, .cash-anim');
   if (!el) return;
